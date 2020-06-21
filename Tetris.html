@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>俄罗斯方块</title>
+<style>
+    #tetris {
+        width:32vh;
+        height:80vh;
+        margin:0 auto;
+        outline:10px solid silver;
+    }
+    #tetris>div {
+        width: 10%;
+        height: 4%;
+        outline: 1px solid silver;
+        float:left;
+        box-sizing: border-box;
+        font-size:.5em;
+    }
+    .block{
+        background-color:#666;
+        border:.8vh solid;
+        border-color:#999 #999 #333 #333;
+    }
+    .game {
+        width: 32vh;
+        height: 20vh;
+        position: absolute;
+    }
+</style>
+</head>
+<body>
+    <div id="tetris">
+
+    </div>
+    <script>
+        //顶部框
+        var gameTop = document.createElement("div");
+        //分数，和模式的框
+        var gameModel = document.createElement("div");
+        //分数
+        var gameMark = document.createElement("div");
+        //难度
+        var gameModels = document.createElement("div");
+        //简单
+        var gameEasy = document.createElement("div");
+        //普通
+        var gameCommon = document.createElement("div");
+        //困难
+        var gameDifficult = document.createElement("div");
+        //重新开始
+        var gameRestart = document.createElement("div");
+        var tetris = document.getElementById("tetris");
+        for (let i = 0; i < 250; i++) {
+            var newdiv = document.createElement("div");
+            //newdiv.innerHTML = i;
+            tetris.appendChild(newdiv);
+        }
+
+        //分数
+        var mark = 0;
+        //设置自动时间
+        var time = 300;
+        //存储方块下降到底部的时间
+        var timeTaskDown = time;
+
+        //存储俄罗斯方块的位置【4】
+        var blockArray = [];
+        //存储方块下降到最底部的位置
+        var allArray = [];
+        
+        //如果为true，不执行下降，否则下降
+        var flag = true;
+        //如果符合消除方块的条件，为true，用于剩余方块下降到最底部
+        var deleteFlag = false;
+        //通过随机数设方块
+        var blocks = document.querySelectorAll("#tetris>div");
+        //随机数
+        var rand;
+        //旋转的计数,四下旋转回1
+        var number = 1;
+        
+        //设置消除一行分数
+        var as = 100;
+        //记录被删除的行数
+        var deleteNumber = 0;
+
+        //7种方块
+        function shapeArray(rand,number) {
+            if (rand == 0) {
+                blockArray = [10 + number, 20 + number, 30 + number, 31 + number];
+            } else if (rand == 1) {
+                blockArray = [10 + number, 11 + number, 12 + number, 21 + number];
+            } else if (rand == 2) {
+                blockArray = [10 + number, 11 + number, 20 + number, 21 + number];
+            } else if (rand == 3) {
+                blockArray = [11 + number, 21 + number, 30 + number, 31 + number];
+            } else if (rand == 4) {
+                blockArray = [10 + number, 20 + number, 30 + number, 40 + number];
+            } else if (rand == 5) {
+                blockArray = [10 + number, 20 + number, 21 + number, 31 + number];
+            } else if (rand == 6) {
+                blockArray = [11 + number, 20 + number, 21 + number, 30 + number];
+            }
+            shape(blockArray);
+        }
+
+        //改变方块颜色
+        function shape(blockArray) {
+            for (let i = 0; i < blockArray.length; i++) {
+                //判断allArray是否存在blockArray中的某一个，决定取消颜色
+                if (allArray.includes(blockArray[i])) { }
+                else {
+                    blocks[blockArray[i]].className = "block";
+                }
+            }
+        }
+
+        //方块自动下降
+        var timeTask;
+        function down(blockArray) {
+            //存储方块下降的位置
+            var downArray = [];
+            for (let i = 0; i < blockArray.length; i++) {
+                //flag
+                if (flag) {
+                    downArray.push(blockArray[i] + 10);
+                } else {
+                    downArray.push(blockArray[i]);
+                }
+                //判断allArray是否存在blockArray中的某一个，决定取消颜色
+                if (allArray.includes(blockArray[i])) {
+
+                } else {
+                    blocks[blockArray[i]].className = "";
+                }
+            }
+            blockArray = downArray;
+            shape(blockArray);
+            downArray = [];
+            clearTimeout(timeTask);
+            timeTask = setTimeout(function () {
+                down(blockArray);
+                //如果为true，不执行下降，否则下降，循环调用使得这个每次下降
+                flag = true;
+            }, time);
+
+            //用来判断是否停止下降，并重新
+            var maxNumber = Math.max(...blockArray);
+            if (maxNumber > 239) {
+                //记录底部数组
+                for (let k = 0; k < blockArray.length; k++) {
+                    if (allArray.includes(blockArray[k])) {
+
+                    } else {
+                        allArray.push(blockArray[k]);
+                    }
+                }
+                //当到最底下时清楚下降问人
+                clearTimeout(timeTask);
+                //进入一个新的下降方块
+                start();
+                number = 1;
+            } else if (allArray.includes(blockArray[3] + 10) || allArray.includes(blockArray[2] + 10) || allArray.includes(blockArray[1] + 10) || allArray.includes(blockArray[0] + 10)) {
+                if (blockArray[0] < 39 || blockArray[1] < 39 || blockArray[2] < 39 || blockArray[3] < 39) {
+                    for (let k = 0; k < blockArray.length; k++) {
+                        if (allArray.includes(blockArray[k])) {
+
+                        } else {
+                            allArray.push(blockArray[k]);
+                        }
+                    }
+                    clearTimeout(timeTask);
+                    clearTimeout(timeTaskDown);
+                    number = 1;
+                    alert("游戏结束！分数：" + mark);
+                } else {
+                    for (let k = 0; k < blockArray.length; k++) {
+                        if (allArray.includes(blockArray[k])) {
+                        } else {
+                            allArray.push(blockArray[k]);
+                        }
+                    }
+                    clearTimeout(timeTask);
+                    start();
+                    number = 1;
+                }
+            }
+
+            document.onkeydown = function (event) {
+                var e = event || window.event ||
+                    arguments.callee.caller.arguments[0];
+                //下
+                if (e && e.keyCode == 40) {
+                    var maxNumber = Math.max(...blockArray);
+                    if (maxNumber <= 229) {
+                        if (!allArray.includes(blockArray[1] + 20) && !allArray.includes(blockArray[2] + 20) && !allArray.includes(blockArray[3] + 20) && !allArray.includes(blockArray[0] + 20)) {
+                            var temp = [];
+                            for (let i = 0; i < blockArray.length; i++) {
+                                temp.push(blockArray[i] + 10);
+                                //判断allArray是否存在blockArray中的某一个，决定取消颜色
+                                if (allArray.includes(blockArray[i])) { }
+                                else {
+                                    blocks[blockArray[i]].className = "";
+                                }
+                            }
+                            blockArray = temp;
+                            //flag = true;
+                        }
+                    }
+                }
+                //左
+                if (e && e.keyCode == 37) {
+                    if (blockArray[0] % 10 != 0 && blockArray[1] % 10 != 0 && blockArray[2] % 10 != 0 && blockArray[3] % 10 != 0) {
+                        if (!allArray.includes(blockArray[3] - 1) && !allArray.includes(blockArray[2] - 1) && !allArray.includes(blockArray[1] - 1) && !allArray.includes(blockArray[0] - 1)) {
+                            if (!allArray.includes(blockArray[3] + 9) && !allArray.includes(blockArray[2] + 9) && !allArray.includes(blockArray[1] + 9) && !allArray.includes(blockArray[0] + 9)) {
+                                var temp = [];
+                                for (let i = 0; i < blockArray.length; i++) {
+                                    temp.push(blockArray[i] - 1);
+                                    //判断allArray是否存在blockArray中的某一个，决定取消颜色
+                                    if (allArray.includes(blockArray[i])) {
+
+                                    } else {
+                                        blocks[blockArray[i]].className = "";
+                                    }
+                                }
+                                blockArray = temp;
+                                flag = false;
+                            }
+                        }
+                    }
+                }
+                //右
+                if (e && e.keyCode == 39) {
+                    //控制最右边
+                    if ((blockArray[0] - 9) % 10 != 0 && (blockArray[1] - 9) % 10 != 0 && (blockArray[2] - 9) % 10 != 0 && (blockArray[3] - 9) % 10 != 0) {
+                        //判断右边是否有方块
+                        if (!allArray.includes(blockArray[3] + 1) && !allArray.includes(blockArray[2] + 1) && !allArray.includes(blockArray[1] + 1) && !allArray.includes(blockArray[0] + 1)) {
+                            //判断右下角是否有方块
+                            if (!allArray.includes(blockArray[3] + 11) && !allArray.includes(blockArray[2] + 11) && !allArray.includes(blockArray[1] + 11) && !allArray.includes(blockArray[0] + 11)) {
+                                var temp = [];
+                                for (let i = 0; i < blockArray.length; i++) {
+                                    temp.push(blockArray[i] + 1);
+                                    //判断allArray是否存在blockArray中的某一个，决定取消颜色
+                                    if (allArray.includes(blockArray[i])) {
+
+                                    } else {
+                                        blocks[blockArray[i]].className = "";
+                                    }
+                                }
+                                blockArray = temp;
+                                flag = false;
+                            }
+                        }
+                    }
+                }
+                //上（变形，未写完）
+                /*if (e && e.keyCode == 38) {
+                    var temp = [];
+                    var ex0;
+                    var ex1;
+                    var ex2;
+                    var ex3;
+                    switch (rand) {
+                        case 0:
+                            if (number == 1) {
+                                for (let i = 0; i < blockArray.length; i++) {
+                                    temp.push(blockArray[i]);
+                                    blocks[blockArray[i]].className = "";
+                                }
+                                ex0 = temp[0] + 11;
+                                ex1 = temp[1];
+                                ex2 = temp[2] - 11;
+                                ex3 = temp[3] - 2;
+                                blockArray = chackR(ex0, ex1, ex2, ex3, temp);
+                                number++;
+                                flag = false;
+                                break;
+                            }
+                            if (number == 2) {
+                                for (let i = 0; i < blockArray.length; i++) {
+                                    temp.push(blockArray[i]);
+                                    blocks[blockArray[i]].className = "";
+                                }
+                                ex0 = temp[0] - 12;
+                                ex1 = temp[1];
+                                ex2 = temp[2] - 9;
+                                ex3 = temp[3] + 1;
+                                blockArray = chackR(ex0, ex1, ex2, ex3, temp);
+                                number++;
+                                flag = false;
+                                break;
+                            }
+                            if (number == 3) {
+                                for (let i = 0; i < blockArray.length; i++) {
+                                    temp.push(blockArray[i]);
+                                    blocks[blockArray[i]].className = "";
+                                }
+                                ex0 = temp[0] + 2;
+                                ex1 = temp[1];
+                                ex2 = temp[2] + 11;
+                                ex3 = temp[3] - 11;
+                                blockArray = chackR(ex0, ex1, ex2, ex3, temp);
+                                number++;
+                                flag = false;
+                                break;
+                            }
+                            if (number == 4) {
+                                for (let i = 0; i < blockArray.length; i++) {
+                                    temp.push(blockArray[i]);
+                                    blocks[blockArray[i]].className = "";
+                                }
+                                ex0 = temp[0] - 1;
+                                ex1 = temp[1];
+                                ex2 = temp[2] + 9;
+                                ex3 = temp[3] + 12;
+                                blockArray = chackR(ex0, ex1, ex2, ex3, temp);
+                                number = 1;
+                                flag = false;
+                                break;
+                            }
+                            break;
+                        case 1:
+                            if (number == 1) {
+                                for (let i = 0; i < blockArray.length; i++) {
+                                    temp.push(blockArray[i]);
+                                    blocks[blockArray[i]].className = "";
+                                }
+                                ex0 = temp[0] - 9;
+                                ex1 = temp[1];
+                                ex2 = temp[2] + 9;
+                                ex3 = temp[3] - 11;
+                                blockArray = chackR(ex0, ex1, ex2, ex3, temp);
+                                number++;
+                                flag = false;
+                                break;
+                            }
+                            if (number == 2) {
+                                for (let i = 0; i < blockArray.length; i++) {
+                                    temp.push(blockArray[i]);
+                                    blocks[blockArray[i]].className = "";
+                                }
+                                ex0 = temp[0] + 11;
+                                ex1 = temp[1];
+                                ex2 = temp[2] - 11;
+                                ex3 = temp[3] - 9;
+                                blockArray = chackR(ex0, ex1, ex2, ex3, temp);
+                                number++;
+                                flag = false;
+                                break;
+                            }
+                            if (number == 3) {
+                                for (let i = 0; i < blockArray.length; i++) {
+                                    temp.push(blockArray[i]);
+                                    blocks[blockArray[i]].className = "";
+                                }
+                                ex0 = temp[0] + 9;
+                                ex1 = temp[1];
+                                ex2 = temp[2] - 9;
+                                ex3 = temp[3] + 11;
+                                blockArray = chackR(ex0, ex1, ex2, ex3, temp);
+                                number++;
+                                flag = false;
+                                break;
+                            }
+                            if (number == 4) {
+                                for (let i = 0; i < blockArray.length; i++) {
+                                    temp.push(blockArray[i]);
+                                    blocks[blockArray[i]].className = "";
+                                }
+                                ex0 = temp[0] - 11;
+                                ex1 = temp[1];
+                                ex2 = temp[2] + 11;
+                                ex3 = temp[3] + 9;
+                                blockArray = chackR(ex0, ex1, ex2, ex3, temp);
+                                number = 1;
+                                flag = false;
+                                break;
+                            }
+                            break;
+                    }
+                    
+
+
+                }*/
+            }
+            
+        }
+
+        //消除方块
+        function deleteSuccess() {
+            var lastNumber;
+            for (let i = 0; i < blocks.length; i++) {
+                if (i % 10 == 0) {
+                    if (blocks[i].className == "block" && blocks[i + 1].className == "block" && blocks[i + 2].className == "block" && blocks[i + 3].className == "block" && blocks[i + 4].className == "block" && blocks[i + 5].className == "block" && blocks[i + 6].className == "block" && blocks[i + 7].className == "block" && blocks[i + 8].className == "block" && blocks[i + 9].className == "block") {
+                        for (let j = 0; j <= 9; j++) {
+                            blocks[i + j].className = "";
+                            allArray.remove(i + j);
+                        }
+                        var temp = [];
+                        deleteNumber++;
+                        deleteFlag = true;
+                        mark = mark + as;
+                        gameMark.innerHTML = "分数：" + mark;
+                        lastNumber = i;
+                    }
+                }
+            }
+            if (deleteFlag) {
+                var temp = [];
+                for (let k = 0; k < allArray.length; k++) {
+                    if (allArray[k] < lastNumber) {
+                        temp.push(allArray[k] + (10 * deleteNumber));
+                        blocks[allArray[k]].className = "";
+                    } else {
+                        temp.push(allArray[k]);
+                    }
+                }
+                for (let k = 0; k < temp.length; k++) {
+                    blocks[temp[k]].className = "block";
+                }
+                allArray = [];
+                allArray = temp;
+                deleteNumber = 0;
+                deleteFlag = false;
+            }
+
+        }
+
+        //旋转时并且判断是否可以旋转(暂时没完成)
+        function chackR(ex00, ex01, ex02, ex03, temp) {
+            var ex0 = ex00;
+            var ex1 = ex01;
+            var ex2 = ex02;
+            var ex3 = ex03;
+            if (temp[0] % 10 == 0 || temp[1] % 10 == 0 || temp[2] % 10 == 0 || temp[3] % 10 == 0) {
+                blockArray = temp;
+                for (let i = 0; i < blockArray.length; i++) {
+                    blocks[blockArray[i]].className = "block";
+                }
+                return blockArray;
+            }
+            if ((temp[0] - 9) % 10 == 0 || (temp[1] - 9) % 10 == 0 || (temp[2] - 9) % 10 == 0 || (temp[3] - 9) % 10 == 0) {
+                blockArray = temp;
+                for (let i = 0; i < blockArray.length; i++) {
+                    blocks[blockArray[i]].className = "block";
+                }
+                return blockArray;
+            }
+            if (allArray.includes(ex1 - 11) || allArray.includes(ex1 - 10) || allArray.includes(ex1 - 9) || allArray.includes(ex1 - 1) || allArray.includes(ex1 + 1) || allArray.includes(ex1 + 9) || allArray.includes(ex1 + 10) || allArray.includes(ex1 + 11)) {
+                blockArray = temp;
+                for (let i = 0; i < blockArray.length; i++) {
+                    blocks[blockArray[i]].className = "block";
+                }
+                return blockArray;
+            } else {
+                blockArray = [];
+                blockArray.push(ex0);
+                blockArray.push(ex1);
+                blockArray.push(ex2);
+                blockArray.push(ex3);
+                return blockArray;
+            }
+        }
+
+        //开始游戏
+        var timeTaskDown;
+        function start() {
+            timeTaskdown = setTimeout(function () {
+                rand = Math.floor(Math.random() * 7);
+                shapeArray(rand, 4);
+                setTimeout(function () {
+                    down(blockArray);
+                }, time);
+                deleteSuccess();
+                console.log("当前分数：" + mark);
+            }, timeTaskDown);
+        }
+
+        //重新开始
+        function restart() {
+            for (let i = 0; i < allArray.length; i++) {
+                blocks[allArray[i]].className = "";
+            }
+            for (let i = 0; i < blocks.length; i++) {
+                if (blocks[i].className == "block") {
+                    blocks[i].className = "";
+                }
+            }
+            allArray = [];
+            blockArray = [];
+            mark = 0;
+            gameMark.innerHTML = "分数：" + mark;
+            clearTimeout(timeTask);
+            clearTimeout(timeTaskDown);
+            start();
+        }
+
+        function init() {
+            //顶部框
+            gameTop.className = "game";
+            gameTop.style.width = "32vh";
+            gameTop.style.height = "16vh";
+            gameTop.style.backgroundColor = "#FFFFFF";
+            gameTop.style.borderBottom = "0.4vh solid #adadad";
+            tetris.appendChild(gameTop);
+            //分数，和模式的框
+            gameModel.style.height = "13vh";
+            gameModel.style.position = "relative";
+            gameModel.style.width = "32vh";
+            gameTop.appendChild(gameModel);
+            //分数
+            gameMark.innerHTML = "分数：" + mark;
+            gameMark.style.fontSize = "2.5vh";
+            gameMark.style.padding = "4vh";
+            gameMark.style.width = "15vh";
+            gameMark.style.height = "4.6vh";
+            gameMark.style.textAlign = "center";
+            gameMark.style.borderRight = "0.4vh solid #adadad";
+            gameMark.style.borderBottom = "0.4vh solid #adadad";
+            gameMark.style.color = "#FF0707";
+            gameMark.style.float = "left";
+            gameModel.appendChild(gameMark);
+            //难度
+            gameModels.style.borderBottom = "0.4vh solid #adadad";
+            gameModels.style.float = "right";
+            gameModels.style.width = "8.6vh";
+            gameModels.style.height = "12.6vh";
+            gameModel.appendChild(gameModels);
+            //简单
+            gameEasy.innerHTML = "简单";
+            gameEasy.style.fontSize = "2vh";
+            gameEasy.style.height = "4.2vh";
+            gameEasy.style.cursor = "pointer";
+            gameEasy.style.textAlign = "center";
+            gameEasy.style.borderBottom = "0.4vh solid #adadad";
+            gameModels.appendChild(gameEasy);
+            //普通
+            gameCommon.innerHTML = "普通";
+            gameCommon.style.fontSize = "2vh";
+            gameCommon.style.height = "4vh";
+            gameCommon.style.cursor = "pointer";
+            gameCommon.style.textAlign = "center";
+            gameCommon.style.borderBottom = "0.4vh solid #adadad";
+            gameModels.appendChild(gameCommon);
+            gameEasy.style.backgroundColor = "#ffc1c1";
+            //困难
+            gameDifficult.innerHTML = "困难";
+            gameDifficult.style.fontSize = "2vh";
+            gameDifficult.style.height = "3.6vh";
+            gameDifficult.style.cursor = "pointer";
+            gameDifficult.style.textAlign = "center";
+            gameDifficult.style.borderBottom = "0.4vh solid #adadad";
+            gameModels.appendChild(gameDifficult);
+            //重新开始
+            gameRestart.innerHTML = "重新开始";
+            gameRestart.style.fontSize = "1.7vh";
+            gameRestart.style.textAlign = "center";
+            gameRestart.style.marginLeft = "39%";
+            gameRestart.style.position = "absolute";
+            gameRestart.style.cursor = "pointer";
+            gameTop.appendChild(gameRestart);
+            gameRestart.onclick = function () {
+                restart();
+            }
+            gameEasy.onclick = function () {
+                gameEasy.style.backgroundColor = "#ffc1c1";
+                gameCommon.style.backgroundColor = "";
+                gameDifficult.style.backgroundColor = "";
+                time = 300;
+                restart();
+            }
+            gameCommon.onclick = function () {
+                gameEasy.style.backgroundColor = "";
+                gameCommon.style.backgroundColor = "#ffc1c1";
+                gameDifficult.style.backgroundColor = "";
+                time = 200;
+                restart();
+            }
+            gameDifficult.onclick = function () {
+                gameEasy.style.backgroundColor = "";
+                gameCommon.style.backgroundColor = "";
+                gameDifficult.style.backgroundColor = "#ffc1c1";
+                time = 100;
+                restart();
+            }
+
+        }
+
+        init();
+        start();
+
+        Array.prototype.indexOf = function (val) {
+            for (var i = 0; i < this.length; i++) {
+                if (this[i] == val) return i;
+            }
+            return -1;
+        };
+        Array.prototype.remove = function (val) {
+            var index = this.indexOf(val);
+            if (index > -1) {
+                this.splice(index, 1);
+            }
+        };
+    </script>
+</body>
+</html>
